@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JorTian Food - Daftar Pemesanan</title>
+<style>
+:root{--p:#54236f;--p2:#7d3ca0;--y:#ffd84d;--bg:#f5f1f7;--ink:#292331;--muted:#766e7b;--line:#e8e1ec}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,sans-serif}
+header{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;text-align:center;padding:23px 14px}
+header h1{margin:0;font-size:29px}header p{margin:6px 0 0;font-size:12px;color:#f1e6f8}
+.wrap{max-width:850px;margin:18px auto;padding:0 13px 30px}.panel{background:#fff;border-radius:15px;padding:16px;margin-bottom:15px;box-shadow:0 4px 18px #39204412}
+h2{margin:0 0 13px;color:var(--p);font-size:17px}label{display:block;font-size:12px;font-weight:bold;color:var(--muted);margin:10px 0 5px}
+input{width:100%;border:1px solid var(--line);border-radius:9px;padding:11px;font-size:14px}
+button{border:0;border-radius:9px;padding:10px 13px;font-weight:bold;cursor:pointer}
+.primary{background:var(--p);color:white}.green{background:#168b50;color:white}.soft{background:#f0e6f6;color:var(--p)}.danger{background:#fff0f0;color:#b42318}
+.person{border:1px solid var(--line);border-radius:12px;padding:13px;margin:12px 0}
+.person-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.person-head strong{color:var(--p)}
+.order{display:grid;grid-template-columns:minmax(0,1fr) 90px 38px;gap:7px;align-items:end;margin:8px 0}
+.order label{font-size:10px}.order input{min-width:0;padding:10px 8px}.remove{padding:10px 6px}
+.addorder{font-size:12px;padding:9px 11px}
+.actions{display:flex;gap:9px;flex-wrap:wrap}.actions button{flex:1}
+.muted{font-size:12px;color:var(--muted);line-height:1.5}
+.preview-img{display:block;width:100%;max-width:480px;margin:14px auto 0;border-radius:10px;border:1px solid var(--line)}
+.receipt{background:#fff;border:1px dashed #b8a8c2;max-width:480px;margin:14px auto 0;padding:17px;font-family:"Courier New",monospace}
+.receipt h3{text-align:center;margin:0;color:var(--p);font-size:21px}.receipt .sub{text-align:center;font-size:11px;margin:4px 0 12px}
+.receipt .sep{border-top:1px dashed #999;margin:10px 0}.receipt h4{font-size:13px;margin:10px 0 5px}
+.receipt .line{display:flex;justify-content:space-between;gap:12px;font-size:12px;margin:5px 0}.receipt .line span:first-child{overflow-wrap:anywhere}
+@media(max-width:520px){.wrap{margin-top:12px}.panel{padding:13px}.order{grid-template-columns:minmax(0,1fr) 70px 34px;gap:5px}.order input{font-size:12px;padding:10px 6px}}
+@media print{body{background:#fff}.no-print,header,.entry{display:none!important}.wrap{margin:0;padding:0}.panel{box-shadow:none;padding:0}.receipt{border:0;margin:0 auto;max-width:100%}}
+</style><link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#54236f">
+</head>
+<body>
+<header><h1>JorTian Food</h1><p>DAFTAR PEMESANAN</p></header>
+<div class="wrap">
+<section class="panel entry">
+<h2>Form Daftar Pemesan</h2>
+<div class="muted">Tambahkan beberapa orang dalam satu daftar. Setiap pemesan dapat memiliki beberapa jenis pesanan.</div>
+<div id="people"></div>
+<button class="soft" onclick="addPerson()">＋ Tambah Pemesan</button>
+</section>
+
+<section class="panel">
+<div class="no-print actions">
+<button class="primary" onclick="refresh()">Perbarui Daftar</button>
+<button class="soft" onclick="window.print()">Cetak</button>
+<button class="green" onclick="shareImage()">Kirim Gambar via WhatsApp</button>
+</div>
+<div class="receipt" id="receipt">
+<h3>JorTian Food</h3><div class="sub">DAFTAR PEMESANAN</div>
+<div class="sep"></div><div id="receiptPeople"><p>Belum ada pemesan.</p></div>
+<div class="sep"></div><p style="text-align:center;font-size:11px">Terima kasih telah memesan</p>
+</div>
+<img id="imagePreview" class="preview-img" alt="Pratinjau gambar daftar pesanan" hidden>
+</section>
+</div>
+<script>
+let personCount=0;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function addPerson(){
+ const id=++personCount,el=document.createElement("div");el.className="person";el.dataset.person=id;
+ el.innerHTML=`<div class="person-head"><strong>PEMESAN ${id}</strong><button class="danger" onclick="this.closest('.person').remove();renumber();refresh()">Hapus Pemesan</button></div>
+ <label>Nama Pemesan</label><input class="pname" placeholder="Masukkan nama pemesan" oninput="refresh()">
+ <div class="orders"></div><button class="soft addorder" onclick="addOrder(this)">＋ Tambah Pesanan</button>`;
+ document.getElementById("people").appendChild(el);addOrder(el.querySelector(".addorder"));renumber();refresh();
+}
+function addOrder(btn){
+ const holder=btn.parentElement.querySelector(".orders"),row=document.createElement("div");row.className="order";
+ row.innerHTML=`<div><label>Pesanan</label><input class="itemname" placeholder="Contoh: Nasi Goreng" oninput="refresh()"></div><div><label>Jumlah</label><input class="qty" type="number" min="1" step="1" value="1" oninput="refresh()"></div><button class="danger remove" title="Hapus pesanan" onclick="this.parentElement.remove();refresh()">×</button>`;
+ holder.appendChild(row);refresh();
+}
+function getPeople(){
+ return [...document.querySelectorAll(".person")].map(el=>({name:el.querySelector(".pname").value.trim(),orders:[...el.querySelectorAll(".order")].map(r=>({item:r.querySelector(".itemname").value.trim(),qty:Math.max(0,parseInt(r.querySelector(".qty").value)||0)})).filter(x=>x.item&&x.qty>0)}));
+}
+function refresh(){
+ const people=getPeople(),valid=people.filter(p=>p.name||p.orders.length);
+ document.getElementById("receiptPeople").innerHTML=valid.length?valid.map((p,i)=>`<h4>${esc(p.name||"Pemesan "+(i+1))}</h4>${p.orders.length?p.orders.map(o=>`<div class="line"><span>${esc(o.item)}</span><strong>× ${o.qty}</strong></div>`).join(""):'<p style="font-size:11px">Belum ada rincian pesanan</p>'}`).join(""):"<p>Belum ada pemesan.</p>";
+ document.getElementById("imagePreview").hidden=true;
+}
+function renumber(){[...document.querySelectorAll(".person")].forEach((el,i)=>el.querySelector(".person-head strong").textContent="PEMESAN "+(i+1));}
+function makeOrderImage(){
+ const people=getPeople().filter(p=>p.name||p.orders.length);
+ if(!people.length||!people.some(p=>p.orders.length)){alert("Masukkan minimal satu pemesan dan satu pesanan.");return null;}
+ const canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
+ const width=900,pad=58,lineH=42,content=[];
+ content.push({type:"title",text:"JorTian Food"},{type:"sub",text:"DAFTAR PEMESANAN"},{type:"rule"});
+ people.forEach((p,i)=>{
+   content.push({type:"person",text:p.name||("Pemesan "+(i+1))});
+   if(p.orders.length){p.orders.forEach(o=>content.push({type:"item",name:o.item,qty:o.qty}));}
+   else content.push({type:"empty",text:"Belum ada rincian pesanan"});
+   content.push({type:"space"});
+ });
+ content.push({type:"rule"},{type:"thanks",text:"Terima kasih telah memesan di JorTian Food"});
+ let height=pad*2+content.reduce((sum,x)=>sum+(x.type==="title"?78:x.type==="sub"?48:x.type==="person"?54:x.type==="rule"?28:x.type==="thanks"?55:x.type==="space"?18:lineH),0);
+ canvas.width=width;canvas.height=height;
+ ctx.fillStyle="#f6f0f9";ctx.fillRect(0,0,width,height);
+ ctx.fillStyle="#54236f";ctx.fillRect(0,0,width,210);
+ ctx.fillStyle="#ffd84d";ctx.fillRect(0,202,width,8);
+ let y=pad+32;
+ content.forEach(x=>{
+   if(x.type==="title"){ctx.fillStyle="#ffffff";ctx.font="bold 54px Arial";ctx.textAlign="center";ctx.fillText(x.text,width/2,y);y+=78;}
+   else if(x.type==="sub"){ctx.fillStyle="#f3e7fa";ctx.font="bold 25px Arial";ctx.textAlign="center";ctx.fillText(x.text,width/2,y);y+=48;}
+   else if(x.type==="rule"){ctx.strokeStyle="#bca9c9";ctx.setLineDash([9,8]);ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(width-pad,y);ctx.stroke();ctx.setLineDash([]);y+=28;}
+   else if(x.type==="person"){ctx.fillStyle="#54236f";ctx.font="bold 29px Arial";ctx.textAlign="left";ctx.fillText(x.text,pad,y);y+=54;}
+   else if(x.type==="item"){
+     ctx.fillStyle="#302638";ctx.font="25px Arial";ctx.textAlign="left";
+     const max=width-pad*2-150;let words=x.name.split(/\s+/),lines=[],line="";
+     words.forEach(w=>{let test=line?line+" "+w:w;if(ctx.measureText(test).width>max&&line){lines.push(line);line=w;}else line=test;});if(line)lines.push(line);
+     lines.forEach((ln,j)=>{ctx.fillText(ln,pad+(j?22:0),y);});
+     ctx.font="bold 25px Arial";ctx.textAlign="right";ctx.fillText("× "+x.qty,width-pad,y);
+     y+=Math.max(1,lines.length)*lineH;
+   }
+   else if(x.type==="empty"){ctx.fillStyle="#766e7b";ctx.font="italic 21px Arial";ctx.textAlign="left";ctx.fillText(x.text,pad,y);y+=lineH;}
+   else if(x.type==="space"){y+=18;}
+   else if(x.type==="thanks"){ctx.fillStyle="#54236f";ctx.font="bold 22px Arial";ctx.textAlign="center";ctx.fillText(x.text,width/2,y);y+=55;}
+ });
+ return new Promise(resolve=>canvas.toBlob(blob=>resolve({blob,canvas}),"image/png"));
+}
+async function shareImage(){
+ const result=await makeOrderImage();if(!result)return;
+ const file=new File([result.blob],"JorTian_Food_Daftar_Pesanan.png",{type:"image/png"});
+ const preview=document.getElementById("imagePreview");preview.src=URL.createObjectURL(result.blob);preview.hidden=false;
+ try{
+   if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+     await navigator.share({files:[file],title:"JorTian Food - Daftar Pemesanan",text:"Daftar pesanan JorTian Food"});
+   }else{
+     const a=document.createElement("a");a.href=preview.src;a.download=file.name;a.click();
+     alert("Perangkat/browser belum mendukung berbagi gambar langsung. Gambar PNG sudah diunduh; bro bisa melampirkannya di WhatsApp.");
+   }
+ }catch(err){if(err.name!=="AbortError")alert("Gambar sudah dibuat. Jika menu berbagi tidak muncul, gunakan gambar pratinjau untuk diunduh.");}
+}
+addPerson();refresh();
+</script><script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+}
+</script>
+</body></html>
