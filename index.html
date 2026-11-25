@@ -29,8 +29,24 @@ button{border:0;border-radius:9px;padding:10px 13px;font-weight:bold;cursor:poin
 @media print{body{background:#fff}.no-print,header,.entry{display:none!important}.wrap{margin:0;padding:0}.panel{box-shadow:none;padding:0}.receipt{border:0;margin:0 auto;max-width:100%}}
 </style><link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#54236f">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#54236f">
+<style>
+#jtSplash{position:fixed;inset:0;z-index:99999;background:#3d0759;display:flex;align-items:center;justify-content:center}
+#jtSplash img{width:100%;height:100%;object-fit:contain;background:#3d0759}
+#jtStart{position:absolute;left:22%;width:56%;height:10%;bottom:11%;border:0;border-radius:60px;background:transparent;color:transparent;cursor:pointer}
+#jtStart:focus-visible{outline:3px solid #fff}
+body.jt-waiting{overflow:hidden}
+</style>
 </head>
-<body>
+<body class="jt-waiting">
+<div id="jtSplash" aria-label="Splash screen JT Food">
+  <img src="splash.png" alt="JT Food - Pesan jadi lebih mudah dan cepat">
+  <button id="jtStart" type="button" aria-label="Mulai"></button>
+</div>
+
 <header><h1>JorTian Food</h1><p>DAFTAR PEMESANAN</p></header>
 <div class="wrap">
 <section class="panel entry">
@@ -83,7 +99,7 @@ function makeOrderImage(){
  if(!people.length||!people.some(p=>p.orders.length)){alert("Masukkan minimal satu pemesan dan satu pesanan.");return null;}
  const canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
  const width=900,pad=58,lineH=42,content=[];
- content.push({type:"title",text:"JorTian Food"},{type:"sub",text:"DAFTAR PEMESANAN"},{type:"rule"});
+ content.push({type:"title",text:"JorTian Food"},{type:"sub",text:"DAFTAR PEMESANAN"},{type:"tagline",text:"Pesan jadi lebih mudah dan cepat"},{type:"rule"});
  people.forEach((p,i)=>{
    content.push({type:"person",text:p.name||("Pemesan "+(i+1))});
    if(p.orders.length){p.orders.forEach(o=>content.push({type:"item",name:o.item,qty:o.qty}));}
@@ -91,7 +107,7 @@ function makeOrderImage(){
    content.push({type:"space"});
  });
  content.push({type:"rule"},{type:"thanks",text:"Terima kasih telah memesan di JorTian Food"});
- let height=pad*2+content.reduce((sum,x)=>sum+(x.type==="title"?78:x.type==="sub"?48:x.type==="person"?54:x.type==="rule"?28:x.type==="thanks"?55:x.type==="space"?18:lineH),0);
+ let height=pad*2+content.reduce((sum,x)=>sum+(x.type==="title"?78:x.type==="sub"?48:x.type==="tagline"?48:x.type==="person"?54:x.type==="rule"?28:x.type==="thanks"?55:x.type==="space"?18:lineH),0);
  canvas.width=width;canvas.height=height;
  ctx.fillStyle="#f6f0f9";ctx.fillRect(0,0,width,height);
  ctx.fillStyle="#54236f";ctx.fillRect(0,0,width,210);
@@ -100,6 +116,7 @@ function makeOrderImage(){
  content.forEach(x=>{
    if(x.type==="title"){ctx.fillStyle="#ffffff";ctx.font="bold 54px Arial";ctx.textAlign="center";ctx.fillText(x.text,width/2,y);y+=78;}
    else if(x.type==="sub"){ctx.fillStyle="#f3e7fa";ctx.font="bold 25px Arial";ctx.textAlign="center";ctx.fillText(x.text,width/2,y);y+=48;}
+   else if(x.type==="tagline"){ctx.fillStyle="#ffd84d";ctx.font="bold italic 25px Arial";ctx.textAlign="center";ctx.fillText(x.text,width/2,y);y+=48;}
    else if(x.type==="rule"){ctx.strokeStyle="#bca9c9";ctx.setLineDash([9,8]);ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(width-pad,y);ctx.stroke();ctx.setLineDash([]);y+=28;}
    else if(x.type==="person"){ctx.fillStyle="#54236f";ctx.font="bold 29px Arial";ctx.textAlign="left";ctx.fillText(x.text,pad,y);y+=54;}
    else if(x.type==="item"){
@@ -134,5 +151,12 @@ addPerson();refresh();
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(()=>{}));
 }
+</script>
+<script>
+document.getElementById("jtStart")?.addEventListener("click",()=>{
+  const splash=document.getElementById("jtSplash");
+  if(splash) splash.remove();
+  document.body.classList.remove("jt-waiting");
+});
 </script>
 </body></html>
